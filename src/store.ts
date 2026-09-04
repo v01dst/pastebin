@@ -153,6 +153,39 @@ export class PasteStore {
     };
   }
 
+  stats(): { totalPastes: number; totalBytes: number; burnAfterRead: number; withTtl: number } {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS total,
+                COALESCE(SUM(LENGTH(content)), 0) AS bytes,
+                COALESCE(SUM(burns), 0) AS burns,
+                COALESCE(SUM(CASE WHEN expires_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS with_ttl
+         FROM pastes`
+      )
+      .get() as { total: number; bytes: number; burns: number; with_ttl: number };
+    return {
+      totalPastes: row.total,
+      totalBytes: row.bytes,
+      burnAfterRead: row.burns,
+      withTtl: row.with_ttl,
+    };
+  }
+
+  recent(limit: number): { id: string; language: string | null; createdAt: string; bytes: number }[] {
+    const rows = this.db
+      .prepare(
+        `SELECT id, language, created_at, LENGTH(content) AS bytes
+         FROM pastes ORDER BY created_at DESC LIMIT ?`
+      )
+      .all(limit) as { id: string; language: string | null; created_at: string; bytes: number }[];
+    return rows.map((r) => ({
+      id: r.id,
+      language: r.language,
+      createdAt: r.created_at,
+      bytes: r.bytes,
+    }));
+  }
+
   close(): void {
     this.db.close();
   }

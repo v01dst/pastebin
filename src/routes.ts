@@ -130,6 +130,21 @@ export function pasteRoutes(app: FastifyInstance, opts: PasteRoutesOpts): void {
     }
   );
 
+  app.get("/stats", async (_request, reply) => {
+    return reply.status(200).send(store.stats());
+  });
+
+  app.get(
+    "/recent",
+    async (request, reply) => {
+      const query = request.query as { limit?: string };
+      let limit = Number(query.limit) || 10;
+      if (!Number.isInteger(limit) || limit < 1) limit = 10;
+      limit = Math.min(limit, 50);
+      return reply.status(200).send({ pastes: store.recent(limit) });
+    }
+  );
+
   app.get("/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
     try {

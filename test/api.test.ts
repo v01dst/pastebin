@@ -151,3 +151,38 @@ describe("paste API", () => {
     expect(res.json().status).toBe("ok");
   });
 });
+
+describe("GET /stats and /recent", () => {
+  it("aggregates stats", async () => {
+    const app2 = build();
+    await app2.inject({
+      method: "POST",
+      url: "/paste",
+      payload: { content: "one", burnAfterRead: false },
+    });
+    await app2.inject({
+      method: "POST",
+      url: "/paste",
+      payload: { content: "two with more bytes", ttl: 3600 },
+    });
+    const res = await app2.inject({ url: "/stats" });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.totalPastes).toBe(2);
+    expect(body.totalBytes).toBeGreaterThan(0);
+    expect(body.withTtl).toBe(1);
+    await app2.close();
+  });
+
+  it("lists recent pastes newest first", async () => {
+    const app2 = build();
+    await app2.inject({ method: "POST", url: "/paste", payload: { content: "first" } });
+    await app2.inject({ method: "POST", url: "/paste", payload: { content: "second", language: "go" } });
+    const res = await app2.inject({ url: "/recent?limit=2" });
+    const pastes = res.json().pastes;
+    expect(pastes).toHaveLength(2);
+    expect(pastes[0].language).toBe("go");
+    expect(pastes[0].bytes).toBe(6);
+    await app2.close();
+  });
+});

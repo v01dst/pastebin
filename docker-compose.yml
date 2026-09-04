@@ -1,0 +1,27 @@
+services:
+  pastebin:
+    build: .
+    image: v01dst/pastebin:1.0.0
+    container_name: pastebin
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_PATH: /app/data/pastes.db
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+    volumes:
+      - pastebin-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  pastebin-data:

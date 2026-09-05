@@ -193,7 +193,7 @@ export class PasteStore {
     const rows = this.db
       .prepare(
         `SELECT id, language, created_at, LENGTH(content) AS bytes
-         FROM pastes ORDER BY created_at DESC LIMIT ?`
+         FROM pastes ORDER BY created_at DESC, rowid DESC LIMIT ?`
       )
       .all(limit) as { id: string; language: string | null; created_at: string; bytes: number }[];
     return rows.map((r) => ({

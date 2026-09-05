@@ -145,6 +145,21 @@ export function pasteRoutes(app: FastifyInstance, opts: PasteRoutesOpts): void {
     }
   );
 
+  app.get(
+    "/:id/meta",
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const meta = store.getMeta(id);
+      if (!meta) {
+        return reply
+          .status(404)
+          .header("content-type", "text/html; charset=utf-8")
+          .send(errorPage(404, `paste "${id}" not found`));
+      }
+      return reply.status(200).send(meta);
+    }
+  );
+
   app.get("/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
     try {

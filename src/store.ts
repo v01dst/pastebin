@@ -171,6 +171,24 @@ export class PasteStore {
     };
   }
 
+  getMeta(id: string): { id: string; language: string | null; bytes: number; views: number; maxViews: number | null; expiresAt: string | null; createdAt: string } | undefined {
+    const row = this.db
+      .prepare("SELECT id, language, views, max_views, expires_at, created_at, LENGTH(content) AS bytes FROM pastes WHERE id = ?")
+      .get(id) as
+        | { id: string; language: string | null; views: number; max_views: number; expires_at: string | null; created_at: string; bytes: number }
+        | undefined;
+    if (!row) return undefined;
+    return {
+      id: row.id,
+      language: row.language,
+      bytes: row.bytes,
+      views: row.views,
+      maxViews: row.max_views > 0 ? row.max_views : null,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+    };
+  }
+
   recent(limit: number): { id: string; language: string | null; createdAt: string; bytes: number }[] {
     const rows = this.db
       .prepare(

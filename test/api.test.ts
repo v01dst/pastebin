@@ -186,3 +186,33 @@ describe("GET /stats and /recent", () => {
     await app2.close();
   });
 });
+
+describe("GET /:id/meta", () => {
+  it("returns metadata without consuming views", async () => {
+    const app2 = build();
+    const created = await app2.inject({
+      method: "POST",
+      url: "/paste",
+      payload: { content: "some content", language: "go", maxViews: 2 },
+    });
+    const { id } = created.json();
+    const res = await app2.inject({ url: `/${id}/meta` });
+    expect(res.statusCode).toBe(200);
+    const meta = res.json();
+    expect(meta.bytes).toBe(12);
+    expect(meta.views).toBe(0);
+    expect(meta.language).toBe("go");
+    expect(meta.maxViews).toBe(2);
+
+    const meta2 = await app2.inject({ url: `/${id}/meta` });
+    expect(meta2.json().views).toBe(0);
+    await app2.close();
+  });
+
+  it("404s for unknown pastes", async () => {
+    const app2 = build();
+    const res = await app2.inject({ url: "/zzzzzzzz/meta" });
+    expect(res.statusCode).toBe(404);
+    await app2.close();
+  });
+});
